@@ -1,6 +1,7 @@
 import config from "./config";
 import express from "express";
 import apiRouter from "../api";
+import utilsRouter from "./utils";
 // import morgan from 'morgan';
 
 const server = express();
@@ -12,6 +13,10 @@ server.use(express.json());
 server.use(express.urlencoded({ extended: false }));
 
 server.use("/api", apiRouter);
+
+if (config.nodeEnv === "development") {
+  server.use("/utils", utilsRouter);
+}
 
 // Generic error handler
 // server.use(function(err, req, res, next) {

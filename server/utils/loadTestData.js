@@ -1,8 +1,12 @@
+import express from "express";
 import { MongoClient } from "mongodb";
-import assert from "assert";
+// import assert from "assert";
 import config from "../config";
 
+const router = express.Router();
+
 const now = new Date();
+const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 const day1 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 const day2 = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
 const day3 = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2);
@@ -13,15 +17,27 @@ const day7 = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 6);
 const day8 = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7);
 const day9 = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 8);
 
-MongoClient.connect(config.mongodbUri, (err, client) => {
-  assert.equal(err, null);
-  const db = client.db(config.dbName);
+const client = new MongoClient(config.mongodbUri);
 
-  deleteAllEvents(db).then(response => {
-    insertEvents(db).then(response => {
-      client.close();
-    });
-  });
+router.get("/", async (req, res) => {
+  // send back a json response
+  try {
+    await client.connect();
+    console.log("Connected successfully to server");
+
+    const mdb = client.db(config.dbName);
+    await deleteAllEvents(mdb);
+    await insertEvents(mdb);
+
+    const col = mdb.collection("events");
+    const events = await col.find({ date: { $gte: today } }).toArray();
+    res.json(events);
+
+  } catch (err) {
+    console.log(err.stack);
+  }
+
+  client.close();
 });
 
 const deleteAllEvents = db => {
@@ -49,7 +65,7 @@ const insertEvents = db => {
     collection
       .insertMany([
         {
-          name: "Paryushan Day 1",
+          name: "Event Day 1",
           desc: "",
           date: day1,
           hasNavkarshi: false,
@@ -57,23 +73,23 @@ const insertEvents = db => {
           hasDinner: true
         },
         {
-          name: "Paryushan Day 2",
-          desc: "Mahavir Janma Vanchan",
+          name: "Event Day 2",
+          desc: "More info about day 2 event",
           date: day2,
           hasNavkarshi: false,
           hasLunch: true,
           hasDinner: true
         },
         {
-          name: "Paryushan Day 3",
-          desc: "Chaudas",
+          name: "Event Day 3",
+          desc: "More info about day 3 event",
           date: day3,
           hasNavkarshi: false,
           hasLunch: true,
           hasDinner: false
         },
         {
-          name: "Paryushan Day 4",
+          name: "EVent Day 4",
           desc: "",
           date: day4,
           hasNavkarshi: false,
@@ -81,7 +97,7 @@ const insertEvents = db => {
           hasDinner: true
         },
         {
-          name: "Paryushan Day 5",
+          name: "Event Day 5",
           desc: "",
           date: day5,
           hasNavkarshi: false,
@@ -89,7 +105,7 @@ const insertEvents = db => {
           hasDinner: true
         },
         {
-          name: "Paryushan Day 6",
+          name: "Event Day 6",
           desc: "",
           date: day6,
           hasNavkarshi: false,
@@ -97,7 +113,7 @@ const insertEvents = db => {
           hasDinner: true
         },
         {
-          name: "Paryushan Day 7",
+          name: "Event Day 7",
           desc: "",
           date: day7,
           hasNavkarshi: false,
@@ -105,7 +121,7 @@ const insertEvents = db => {
           hasDinner: true
         },
         {
-          name: "Paryushan Day 8",
+          name: "Event Day 8",
           desc: "",
           date: day8,
           hasNavkarshi: false,
@@ -113,8 +129,8 @@ const insertEvents = db => {
           hasDinner: false
         },
         {
-          name: "Paryushan Parna Day",
-          desc: "Parna",
+          name: "Last Day Event",
+          desc: "More info on last day event",
           date: day9,
           hasNavkarshi: true,
           hasLunch: false,
@@ -131,3 +147,5 @@ const insertEvents = db => {
       });
   });
 };
+
+export default router;
