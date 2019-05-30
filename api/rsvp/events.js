@@ -1,7 +1,7 @@
 import express from "express";
 // import _ from "lodash";
 import { MongoClient, ObjectID } from "mongodb";
-// import assert from "assert";
+import assert from "assert";
 import config from "../../server/config";
 
 const router = express.Router();
@@ -10,16 +10,25 @@ const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
 // Temp
 const events = {};
-const client = new MongoClient(config.mongodbUri);
+const client = new MongoClient(config.mongodbUri, { useNewUrlParser: true });
+
+// Connect the MongoDB server
+(async () => {
+  try {
+    await client.connect();
+    console.log("Connected correctly to server");
+  } catch (err) {
+    console.log(err.stack);
+  }
+})();
 
 router.param("id", async function(req, res, next, id) {
   try {
-    await client.connect();
-    // console.log("Connected successfully to server");
-
     const mdb = client.db(config.dbName);
     const col = mdb.collection("events");
+
     const event = await col.findOne({ _id: ObjectID(id) });
+
     if (!event) {
       res.status(404).send("Event with id " + id + " does not exist.");
     } else {
@@ -29,16 +38,11 @@ router.param("id", async function(req, res, next, id) {
   } catch (err) {
     console.log(err.stack);
   }
-
-  client.close();
 });
 
 router.get("/", async (req, res) => {
   // send back a json response
   try {
-    await client.connect();
-    // console.log("Connected successfully to server");
-
     const mdb = client.db(config.dbName);
     const col = mdb.collection("events");
 
@@ -47,8 +51,6 @@ router.get("/", async (req, res) => {
   } catch (err) {
     console.log(err.stack);
   }
-
-  client.close();
 });
 
 router.delete("/", (req, res) => {
