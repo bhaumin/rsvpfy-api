@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get("/", (req, res) => {
   // send back a json response
-  res.json({ data: "RSVP API" });
+  res.json({ data: "RSVPfy API" });
 });
 
 router.use("/events", eventsRoutes);
