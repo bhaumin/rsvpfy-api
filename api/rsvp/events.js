@@ -1,49 +1,54 @@
 import express from "express";
-import _ from "lodash";
+// import _ from "lodash";
 import { MongoClient, ObjectID } from "mongodb";
-import assert from "assert";
+// import assert from "assert";
 import config from "../../server/config";
 
 const router = express.Router();
-
 const now = new Date();
 const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
 // Temp
 const events = {};
+const client = new MongoClient(config.mongodbUri);
 
-let mdb;
-MongoClient.connect(config.mongodbUri, (err, client) => {
-  assert.equal(err, null);
-  mdb = client.db(config.dbName);
+router.param("id", async function(req, res, next, id) {
+  try {
+    await client.connect();
+    // console.log("Connected successfully to server");
+
+    const mdb = client.db(config.dbName);
+    const col = mdb.collection("events");
+    const event = await col.findOne({ _id: ObjectID(id) });
+    if (!event) {
+      res.status(404).send("Event with id " + id + " does not exist.");
+    } else {
+      req.event = event;
+      next();
+    }
+  } catch (err) {
+    console.log(err.stack);
+  }
+
+  client.close();
 });
 
-router.param("id", function(req, res, next, id) {
-  mdb
-    .collection("events")
-    .findOne({
-      _id: ObjectID(id)
-    })
-    .then(event => {
-      if (!event) {
-        res.status(404).send("Event with id " + id + " does not exist.");
-      } else {
-        req.event = event;
-        next();
-      }
-    })
-    .catch(console.error);
-});
-
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
   // send back a json response
-  mdb
-    .collection("events")
-    .find({ date: { $gte: today } })
-    .toArray((err, events) => {
-      assert.equal(err, null);
-      res.json(events);
-    });
+  try {
+    await client.connect();
+    // console.log("Connected successfully to server");
+
+    const mdb = client.db(config.dbName);
+    const col = mdb.collection("events");
+
+    const events = await col.find({ date: { $gte: today } }).toArray();
+    res.json(events);
+  } catch (err) {
+    console.log(err.stack);
+  }
+
+  client.close();
 });
 
 router.delete("/", (req, res) => {
