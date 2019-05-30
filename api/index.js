@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get("/", (req, res) => {
   // send back a json response
-  res.json({ data: "JCNC API" });
+  res.json({ data: "RSVPfy API" });
 });
 
 router.use("/rsvp", rsvpRoutes);
